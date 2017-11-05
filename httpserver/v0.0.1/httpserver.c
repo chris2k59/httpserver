@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <unistd.h>
+
 
 #include "libhttp.h"
 #include "wq.h"
@@ -227,6 +227,8 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
 
   printf("Listening on port %d...\n", server_port);
 
+  wq_init(&work_queue);
+ 
   init_thread_pool(num_threads, request_handler);
 
   while (1) {
@@ -257,7 +259,7 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
 
 int server_fd;
 void signal_callback_handler(int signum) {
-  printf("Caught signal %d: %s\n", signum, strsignal(signum));
+  printf(" Caught signal %d: %s\n", signum, strsignal(signum));
   printf("Closing socket %d\n", server_fd);
   if (close(server_fd) < 0) perror("Failed to close server_fd (ignoring)\n");
   exit(0);
