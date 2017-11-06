@@ -178,11 +178,32 @@ void handle_proxy_request(int fd) {
   */
 }
 
+struct threadArg{
+  void (*callback)(int);
+};
+
+void *my_thread(void* arg){
+ struct threadArg * threadarg = arg;   
+  while(1){
+    int client_socket_number = wq_pop(&work_queue);    
+    threadarg->callback(client_socket_number);
+    close(client_socket_number);
+  }
+}
 
 void init_thread_pool(int num_threads, void (*request_handler)(int)) {
   /*
    * TODO: Part of your solution for Task 2 goes here!
    */
+  
+  struct threadArg *threadArg = malloc(sizeof(threadArg));
+  threadArg->callback = request_handler;  
+
+  pthread_t thread_id[num_threads];
+  for(int i=0;i<num_threads;i++){
+    pthread_create(&thread_id[i], NULL, &my_thread, (void *) threadArg);
+  }
+  
 }
 
 /*
@@ -230,7 +251,7 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
   wq_init(&work_queue);
  
   init_thread_pool(num_threads, request_handler);
-
+ 
   while (1) {
     client_socket_number = accept(*socket_number,
         (struct sockaddr *) &client_address,
@@ -245,8 +266,7 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
         client_address.sin_port);
 
     // TODO: Change me?
-    request_handler(client_socket_number);
-    close(client_socket_number);
+  wq_push(&work_queue, client_socket_number);  
 
     printf("Accepted connection from %s on port %d\n",
         inet_ntoa(client_address.sin_addr),
