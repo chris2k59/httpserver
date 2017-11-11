@@ -28,6 +28,10 @@ struct http_request {
   char *path;
 };
 
+void http_fatal_error(char *message);
+
+int proxy_buffer(int fd, char *buffer);
+
 struct http_request *http_request_parse(int fd);
 
 /*

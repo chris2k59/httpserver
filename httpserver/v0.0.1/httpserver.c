@@ -18,6 +18,8 @@
 #include "libhttp.h"
 #include "wq.h"
 
+#define LIBHTTP_REQUEST_MAX_SIZE 8192
+
 /*
  * Global configuration variables.
  * You need to use these in your implementation of handle_files_request and
@@ -172,10 +174,21 @@ void handle_proxy_request(int fd) {
     return;
 
   }
+  
+  /*TODO*/
+  char *buffer = malloc(LIBHTTP_REQUEST_MAX_SIZE +1);
+  if(!buffer) http_fatal_error("Malloc failed");
+ 
+  int bytes_read = proxy_buffer(fd, buffer);
+    
+  send(client_socket_fd, buffer,bytes_read,0);
+  
+  char *S_buffer = malloc(LIBHTTP_REQUEST_MAX_SIZE+1);
+  if(!S_buffer) http_fatal_error("Malloc failed");
 
-  /* 
-  * TODO: Your solution for task 3 belongs here! 
-  */
+  int S_bytes_read = proxy_buffer(client_socket_fd, S_buffer);
+
+  send(fd, S_buffer, S_bytes_read,0);   
 }
 
 struct threadArg{
@@ -183,7 +196,7 @@ struct threadArg{
 };
 
 void *my_thread(void* arg){
- struct threadArg * threadarg = arg;   
+  struct threadArg *threadarg = arg;   
   while(1){
     int client_socket_number = wq_pop(&work_queue);    
     threadarg->callback(client_socket_number);
@@ -264,13 +277,11 @@ void serve_forever(int *socket_number, void (*request_handler)(int)) {
     printf("Accepted connection from %s on port %d\n",
         inet_ntoa(client_address.sin_addr),
         client_address.sin_port);
-
+         
+  
     // TODO: Change me?
-  wq_push(&work_queue, client_socket_number);  
+    wq_push(&work_queue, client_socket_number);  
 
-    printf("Accepted connection from %s on port %d\n",
-        inet_ntoa(client_address.sin_addr),
-        client_address.sin_port);
   }
 
   shutdown(*socket_number, SHUT_RDWR);

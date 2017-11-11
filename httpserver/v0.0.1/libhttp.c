@@ -14,6 +14,16 @@ void http_fatal_error(char *message) {
   exit(ENOBUFS);
 }
 
+int proxy_buffer(int fd ,char *buffer){
+  
+
+  int bytes_read = read(fd, buffer, LIBHTTP_REQUEST_MAX_SIZE +1);
+  buffer[bytes_read] ='\0';
+ 
+  return bytes_read;
+}
+
+
 struct http_request *http_request_parse(int fd) {
   struct http_request *request = malloc(sizeof(struct http_request));
   if (!request) http_fatal_error("Malloc failed");
@@ -207,7 +217,7 @@ void find(char *path){
 char *itoa(long unsigned bSize){
   char *temp = "";
   size_t size = snprintf(temp,0,"%lu",bSize);
-  char result[size+1];
+  char *result= malloc(sizeof(size+1));
 
   snprintf(result, size+1, "%lu", bSize);
   
